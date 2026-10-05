@@ -29,11 +29,12 @@ def ejecutar_consulta(query, params=None, es_escritura=False):
         return None
 
 # 2. CONFIGURACIÓN VISUAL (CSS)
+# Agregar la imagen de AmbieGas!!!!
 st.set_page_config(page_title="AmbieGas - ERP Nube", page_icon="🔥", layout="wide")
 st.markdown(f"""
     <style>
     .stApp {{
-        background-image: linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.35));
+        background-image: linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.35)), url("{IMAGEN_BASE64}");
         background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;
     }}
     .titulo-principal {{ text-align: center; color: #1E3A8A; font-family: 'Arial Black', sans-serif; margin-bottom: 20px; text-shadow: 1px 1px 2px white; }}
@@ -48,27 +49,30 @@ if "autenticado" not in st.session_state:
 
 # PANTALLA DE LOGIN
 if not st.session_state["autenticado"]:
-    st.markdown("<h2 class='titulo-principal'>🔥 AMBIEGAS LP</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='titulo-principal'> AMBIEGAS LP</h2>", unsafe_allow_html=True)
     col_l1, col_l2, col_l3 = st.columns([1, 1.5, 1])
-    
+
     with col_l2:
         st.markdown("<h3 class='subtitulo-login'>ACCESO DE EQUIPO</h3>", unsafe_allow_html=True)
         with st.form("login_form"):
             usuario = st.text_input("Usuario de la Computadora", placeholder="ej. computadora1")
             contrasena = st.text_input("Contraseña de Acceso", type="password", placeholder="••••••••")
             boton_ingresar = st.form_submit_button("Conectar Computadora al Sistema", use_container_width=True)
-            
+
             if boton_ingresar:
-                                # 1. Buscamos en Neon SOLO por el usuario para traer su hash
+                # 1. Buscamos en Neon SOLO por el usuario para traer su hash
                 query = "SELECT contrasena FROM usuarios_computadoras WHERE usuario = %s"
                 resultado = ejecutar_consulta(query, (usuario,))
-                
+
                 # 2. Validamos si el usuario existe y si la contraseña coincide con el hash
                 if resultado:
                     try:
-                        # Extraemos el hash directamente del diccionario de la base de datos
-                        hash_limpio = resultado[0]['contrasena'].strip()
-                        
+                        # Extraemos el hash de la primera fila (índice 0) y primera columna (índice 0)
+                        # Nota: Si tu función ejecutar_consulta ya hace un .fetchone(), usa: resultado[0]
+                        # Si devuelve un .fetchall(), usa: resultado[0][0]
+                        hash_limpio = resultado[0][0].strip()
+
+                        # Convertimos a bytes para que bcrypt pueda procesarlos
                         contrasena_bytes = contrasena.encode('utf-8')
                         hash_bytes = hash_limpio.encode('utf-8')
 
@@ -79,9 +83,11 @@ if not st.session_state["autenticado"]:
                         else:
                             st.error("❌ Credenciales incorrectas.")
                     except Exception as e:
-                        st.error(f"❌ Error de formato: {str(e)}")
+                        # Modificado para mostrarte el error real si algo falla en el formato
+                        st.error(f"⚠️ Error de formato o código: {str(e)}")
                 else:
                     st.error("❌ Credenciales incorrectas.")
+
 
 
 
@@ -395,3 +401,4 @@ else:
         st.session_state["computadora_actual"] = ""
         st.success("Sesión cerrada correctamente.")
         st.rerun()
+
