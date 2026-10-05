@@ -60,18 +60,25 @@ if not st.session_state["autenticado"]:
             boton_ingresar = st.form_submit_button("Conectar Computadora al Sistema", use_container_width=True)
 
             if boton_ingresar:
-                usuario_limpio = usuario.strip()
+                usuario_limpio = usuario.strip().lower()
 
-                # Consulta directa a la tabla verificada
-                query = "SELECT contrasena FROM usuarios_computadoras WHERE LOWER(usuario) = LOWER(%s)"
-                resultado = ejecutar_consulta(query, (usuario_limpio,))
+                # Traemos todos los usuarios para buscarlo directamente en Python y evitar fallas de SQL
+                query = "SELECT usuario, contrasena FROM usuarios_computadoras"
+                resultado = ejecutar_consulta(query)
 
-                if resultado and len(resultado) > 0:
+                # Buscamos si el usuario ingresado está dentro de lo que devolvió la base de datos
+                usuario_encontrado = None
+                if resultado:
+                    for fila in resultado:
+                        # Evaluamos ignorando mayúsculas y minúsculas
+                        if fila['usuario'].strip().lower() == usuario_limpio:
+                            usuario_encontrado = fila
+                            break
+
+                if usuario_encontrado:
                     try:
-                        # Extraemos el hash del primer elemento de la lista del diccionario RealDictRow
-                        hash_limpio = resultado[0]['contrasena'].strip()
+                        hash_limpio = usuario_encontrado['contrasena'].strip()
                         
-                        # Limpieza de prefijos de bytes si existen
                         if hash_limpio.startswith("b'") or hash_limpio.startswith('b"'):
                             hash_limpio = hash_limpio[2:-1]
 
@@ -80,14 +87,15 @@ if not st.session_state["autenticado"]:
 
                         if bcrypt.checkpw(contrasena_bytes, hash_bytes):
                             st.session_state["autenticado"] = True
-                            st.session_state["computadora_actual"] = usuario_limpio
+                            st.session_state["computadora_actual"] = usuario.strip()
                             st.rerun()
                         else:
-                            st.error("❌ Credenciales incorrectas.")
+                            st.error("❌ Credenciales incorrectas (Contraseña inválida).")
                     except Exception as e:
-                        st.error(f"⚠️ Error al procesar credenciales: {str(e)}")
+                        st.error(f"⚠️ Error al procesar bcrypt: {str(e)}")
                 else:
                     st.error("❌ El usuario no se encontró en la base de datos.")
+
 
 
 
