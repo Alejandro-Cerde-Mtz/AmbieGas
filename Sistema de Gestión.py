@@ -60,39 +60,38 @@ if not st.session_state["autenticado"]:
             boton_ingresar = st.form_submit_button("Conectar Computadora al Sistema", use_container_width=True)
 
             if boton_ingresar:
-                # 1. Buscamos en Neon SOLO por el usuario para traer su hash
                 query = "SELECT contrasena FROM usuarios_computadoras WHERE usuario = %s"
                 resultado = ejecutar_consulta(query, (usuario,))
 
-                # 2. Validamos si el usuario existe y si la contraseña coincide con el hash
+                # --- BLOQUE DE DIAGNÓSTICO TEMPORAL ---
+                st.info(f"🔍 Buscando usuario: '{usuario}'")
+                st.info(f"📊 Resultado crudo de la DB: {resultado}")
+                # --------------------------------------
+
                 if resultado:
                     try:
-                        # Extraemos el hash de la primera fila (índice 0) y primera columna (índice 0)
-                        # Nota: Si tu función ejecutar_consulta ya hace un .fetchone(), usa: resultado[0]
-                        # Si devuelve un .fetchall(), usa: resultado[0][0]
                         hash_limpio = resultado[0][0].strip()
+                        
+                        # Limpieza de seguridad por si se guardó con el prefijo b'' de Python
+                        if hash_limpio.startswith("b'") or hash_limpio.startswith('b"'):
+                            hash_limpio = hash_limpio[2:-1]
 
-                        # Convertimos a bytes para que bcrypt pueda procesarlos
                         contrasena_bytes = contrasena.encode('utf-8')
                         hash_bytes = hash_limpio.encode('utf-8')
+
+                        # Mensaje de depuración del formato final
+                        st.info(f"🔐 Comparando contra el hash: {hash_limpio}")
 
                         if bcrypt.checkpw(contrasena_bytes, hash_bytes):
                             st.session_state["autenticado"] = True
                             st.session_state["computadora_actual"] = usuario
                             st.rerun()
                         else:
-                            st.error("❌ Credenciales incorrectas.")
+                            st.error("❌ Credenciales incorrectas (Bcrypt devolvió False).")
                     except Exception as e:
-                        # Modificado para mostrarte el error real si algo falla en el formato
                         st.error(f"⚠️ Error de formato o código: {str(e)}")
                 else:
-                    st.error("❌ Credenciales incorrectas.")
-
-
-
-
-
-
+                    st.error("❌ Credenciales incorrectas (El usuario no se encontró en la base de datos).")
 
 # INTERFAZ OPERATIVA PRINCIPAL
 else:
