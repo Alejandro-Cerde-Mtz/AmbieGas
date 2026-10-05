@@ -69,7 +69,7 @@ if not st.session_state["autenticado"]:
 
                 usuario_limpio = usuario.strip()
                 # Usamos el nombre que tengas verificado en tu base de datos
-                query = "SELECT contrasena FROM usuarios_computacoras WHERE LOWER(usuario) = LOWER(%s)"
+                query = "SELECT contrasena FROM usuarios_computadoras WHERE LOWER(usuario) = LOWER(%s)"
                 resultado = ejecutar_consulta(query, (usuario_limpio,))
 
                 st.info(f"🔍 Buscando usuario: '{usuario_limpio.lower()}'")
