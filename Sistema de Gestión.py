@@ -33,7 +33,7 @@ st.set_page_config(page_title="AmbieGas - ERP Nube", page_icon="🔥", layout="w
 st.markdown(f"""
     <style>
     .stApp {{
-        background-image: linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.35)), url("{IMAGEN_BASE64}");
+        background-image: linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.35));
         background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;
     }}
     .titulo-principal {{ text-align: center; color: #1E3A8A; font-family: 'Arial Black', sans-serif; margin-bottom: 20px; text-shadow: 1px 1px 2px white; }}
