@@ -60,37 +60,35 @@ if not st.session_state["autenticado"]:
             boton_ingresar = st.form_submit_button("Conectar Computadora al Sistema", use_container_width=True)
 
             if boton_ingresar:
-                # --- PRUEBA DE CONEXIÓN REAL ---
-                # Esta consulta listará todas las tablas que Streamlit realmente puede ver
-                query_tablas = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
-                tablas_visibles = ejecutar_consulta(query_tablas)
-                st.info(f"📂 Tablas que la app puede ver en esta DB: {tablas_visibles}")
-                # -------------------------------
-
                 usuario_limpio = usuario.strip()
-                # Usamos el nombre que tengas verificado en tu base de datos
+
+                # Consulta directa a la tabla verificada
                 query = "SELECT contrasena FROM usuarios_computadoras WHERE LOWER(usuario) = LOWER(%s)"
                 resultado = ejecutar_consulta(query, (usuario_limpio,))
 
-                st.info(f"🔍 Buscando usuario: '{usuario_limpio.lower()}'")
-                st.info(f"📊 Resultado crudo de la DB: {resultado}")
-
-                if resultado:
+                if resultado and len(resultado) > 0:
                     try:
-                        hash_limpio = resultado.strip()
+                        # Extraemos el hash del primer elemento de la lista del diccionario RealDictRow
+                        hash_limpio = resultado[0]['contrasena'].strip()
+                        
+                        # Limpieza de prefijos de bytes si existen
                         if hash_limpio.startswith("b'") or hash_limpio.startswith('b"'):
                             hash_limpio = hash_limpio[2:-1]
 
-                        if bcrypt.checkpw(contrasena.encode('utf-8'), hash_limpio.encode('utf-8')):
+                        contrasena_bytes = contrasena.encode('utf-8')
+                        hash_bytes = hash_limpio.encode('utf-8')
+
+                        if bcrypt.checkpw(contrasena_bytes, hash_bytes):
                             st.session_state["autenticado"] = True
                             st.session_state["computadora_actual"] = usuario_limpio
                             st.rerun()
                         else:
                             st.error("❌ Credenciales incorrectas.")
                     except Exception as e:
-                        st.error(f"⚠️ Error: {str(e)}")
+                        st.error(f"⚠️ Error al procesar credenciales: {str(e)}")
                 else:
-                    st.error("❌ El usuario no se encontró en esta base de datos.")
+                    st.error("❌ El usuario no se encontró en la base de datos.")
+
 
 
 # INTERFAZ OPERATIVA PRINCIPAL
