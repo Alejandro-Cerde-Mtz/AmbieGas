@@ -60,38 +60,38 @@ if not st.session_state["autenticado"]:
             boton_ingresar = st.form_submit_button("Conectar Computadora al Sistema", use_container_width=True)
 
             if boton_ingresar:
-                query = "SELECT contrasena FROM usuarios_computadoras WHERE usuario = %s"
-                resultado = ejecutar_consulta(query, (usuario,))
+                # --- PRUEBA DE CONEXIÓN REAL ---
+                # Esta consulta listará todas las tablas que Streamlit realmente puede ver
+                query_tablas = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+                tablas_visibles = ejecutar_consulta(query_tablas)
+                st.info(f"📂 Tablas que la app puede ver en esta DB: {tablas_visibles}")
+                # -------------------------------
 
-                # --- BLOQUE DE DIAGNÓSTICO TEMPORAL ---
-                st.info(f"🔍 Buscando usuario: '{usuario}'")
+                usuario_limpio = usuario.strip()
+                # Usamos el nombre que tengas verificado en tu base de datos
+                query = "SELECT contrasena FROM usuarios_computacoras WHERE LOWER(usuario) = LOWER(%s)"
+                resultado = ejecutar_consulta(query, (usuario_limpio,))
+
+                st.info(f"🔍 Buscando usuario: '{usuario_limpio.lower()}'")
                 st.info(f"📊 Resultado crudo de la DB: {resultado}")
-                # --------------------------------------
 
                 if resultado:
                     try:
-                        hash_limpio = resultado[0][0].strip()
-                        
-                        # Limpieza de seguridad por si se guardó con el prefijo b'' de Python
+                        hash_limpio = resultado.strip()
                         if hash_limpio.startswith("b'") or hash_limpio.startswith('b"'):
                             hash_limpio = hash_limpio[2:-1]
 
-                        contrasena_bytes = contrasena.encode('utf-8')
-                        hash_bytes = hash_limpio.encode('utf-8')
-
-                        # Mensaje de depuración del formato final
-                        st.info(f"🔐 Comparando contra el hash: {hash_limpio}")
-
-                        if bcrypt.checkpw(contrasena_bytes, hash_bytes):
+                        if bcrypt.checkpw(contrasena.encode('utf-8'), hash_limpio.encode('utf-8')):
                             st.session_state["autenticado"] = True
-                            st.session_state["computadora_actual"] = usuario
+                            st.session_state["computadora_actual"] = usuario_limpio
                             st.rerun()
                         else:
-                            st.error("❌ Credenciales incorrectas (Bcrypt devolvió False).")
+                            st.error("❌ Credenciales incorrectas.")
                     except Exception as e:
-                        st.error(f"⚠️ Error de formato o código: {str(e)}")
+                        st.error(f"⚠️ Error: {str(e)}")
                 else:
-                    st.error("❌ Credenciales incorrectas (El usuario no se encontró en la base de datos).")
+                    st.error("❌ El usuario no se encontró en esta base de datos.")
+
 
 # INTERFAZ OPERATIVA PRINCIPAL
 else:
